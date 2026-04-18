@@ -21,6 +21,11 @@ async def convert_ipynb(
     removeComments: str = Form("false"),
     mergeMode: str = Form("single")  # "single" или "include"
 ):
+    try:
+        for file in files:
+            await file_utils.validate_ipynb_file(file)
+    except ValueError as e:
+            return JSONResponse(content={"error": str(e)}, status_code=400)
     # Если директория для данной сессии уже существовала, удаляем её
     file_utils.clear_directory(UPLOAD_DIR / session_id)
     unique_id = session_id

@@ -3,8 +3,34 @@ from pathlib import Path
 import os
 import zipfile
 import shutil
+import json
 
 UPLOAD_DIR = Path("./uploaded_files")
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024
+
+async def validate_ipynb_file(file):
+    filename = file.filename or ""
+
+    if not filename.lower().endswith(".ipynb"):
+        raise ValueError("Можно загружать только файлы .ipynb")
+
+    content = await file.read()
+
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise ValueError("Размер файла не должен превышать 50 МБ")
+
+    try:
+        notebook = json.loads(content.decode("utf-8"))
+    except Exception:
+        raise ValueError("Файл должен быть корректным JSON-документом Jupyter Notebook")
+
+    if not isinstance(notebook, dict):
+        raise ValueError("Некорректная структура .ipynb файла")
+
+    if "cells" not in notebook or not isinstance(notebook["cells"], list):
+        raise ValueError("В .ipynb файле должен быть список ячеек cells")
+
+    await file.seek(0)
 
 
 def remove_extension(file_name):
