@@ -68,6 +68,11 @@ def validate_bool_form_value(value: str, field_name: str):
     if value not in {"true", "false"}:
         raise ValueError(f"{field_name} должен быть true или false")
 
+def validate_document_template(document_template: str):
+    allowed_templates = {"standard", "article", "gost"}
+
+    if document_template not in allowed_templates:
+        raise ValueError("documentTemplate должен быть standard, article или gost")
 
 def remove_extension(file_name):
     return os.path.splitext(file_name)[0]

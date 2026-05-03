@@ -7,13 +7,67 @@ def html_to_rgb(color: str) -> str:
     r, g, b = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
     return f"{r},{g},{b}"
 
+def replace_document_class(tex: str, document_class: str) -> str:
+    return re.sub(
+        r"\\documentclass(?:\[[^\]]*\])?\{[^}]+\}",
+        lambda _: document_class,
+        tex,
+        count=1
+    )
+
+
+def apply_geometry(tex: str, geometry_settings: str) -> str:
+    tex = re.sub(r"\\usepackage(?:\[[^\]]*\])?\{geometry\}\n?", "", tex)
+    tex = re.sub(r"\\geometry\{[^}]*\}\n?", "", tex)
+
+    return re.sub(
+        r"(\\documentclass(?:\[[^\]]*\])?\{[^}]+\}\n?)",
+        lambda match: match.group(1) + geometry_settings + "\n",
+        tex,
+        count=1
+    )
+
+
+def apply_document_template(tex: str, document_template: str) -> str:
+    if document_template == "standard":
+        return tex
+
+    if document_template == "article":
+        tex = replace_document_class(
+            tex,
+            r"\documentclass[11pt,a4paper]{article}"
+        )
+        tex = apply_geometry(
+            tex,
+            r"\usepackage[a4paper,left=25mm,right=25mm,top=25mm,bottom=25mm]{geometry}"
+        )
+        return tex
+
+    if document_template == "gost":
+        tex = replace_document_class(
+            tex,
+            r"\documentclass[14pt,a4paper]{extarticle}"
+        )
+        tex = apply_geometry(
+            tex,
+            r"\usepackage[a4paper,left=30mm,right=15mm,top=20mm,bottom=20mm]{geometry}"
+        )
+        tex = tex.replace(
+            r"\begin{document}",
+            r"\linespread{1.3}" + "\n" + r"\begin{document}",
+            1
+        )
+        return tex
+
+    return tex
 
 def patch_tex_file(
         tex: str,
         code_bg: str,
         remove_prompt: bool,
         indent: int,
-        remove_comments: bool
+        remove_comments: bool,
+        document_template: str = "standard"
 ) -> str:
     rgb_code = html_to_rgb(code_bg)
 
@@ -38,6 +92,8 @@ def patch_tex_file(
 
     # Удаляем автоматически сгенерированный заголовок
     tex = tex.replace(r"\maketitle", "")
+    
+    tex = apply_document_template(tex, document_template)
 
     # Удаляем номера ячеек, если требуется
     if remove_prompt:

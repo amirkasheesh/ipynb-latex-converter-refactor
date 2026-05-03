@@ -29,7 +29,9 @@ function ProcessPage({
     indent,
     setIndent,
     removeComments,
-    setRemoveComments
+    setRemoveComments,
+    documentTemplate,
+    setDocumentTemplate
 }) {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const location = useLocation();
@@ -136,6 +138,8 @@ function ProcessPage({
                         removeComments={removeComments}
                         setRemoveComments={setRemoveComments}
                         downloadDisabled={previewTexUrl === ''}
+                        documentTemplate={documentTemplate}
+                        setDocumentTemplate={setDocumentTemplate}
                     />
                 </div>
             </div>

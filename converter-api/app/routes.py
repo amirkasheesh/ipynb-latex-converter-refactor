@@ -19,7 +19,8 @@ async def convert_ipynb(
     includeCellNumbers: str = Form("true"),
     indent: int = Form(0),
     removeComments: str = Form("false"),
-    mergeMode: str = Form("single")  # "single" или "include"
+    mergeMode: str = Form("single"),  # "single" или "include"
+    documentTemplate: str = Form("standard")
 ):
     try:
         for file in files:
@@ -28,6 +29,7 @@ async def convert_ipynb(
         file_utils.validate_merge_mode(mergeMode)
         file_utils.validate_bool_form_value(includeCellNumbers, "includeCellNumbers")
         file_utils.validate_bool_form_value(removeComments, "removeComments")
+        file_utils.validate_document_template(documentTemplate)
     except ValueError as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
@@ -67,7 +69,8 @@ async def convert_ipynb(
             code_bg=codeBg,
             remove_prompt_numbers=remove_prompt_numbers,
             indent=indent,
-            remove_comments=removeComments == "true"
+            remove_comments=removeComments == "true",
+            document_template=documentTemplate
         )
 
     elif mergeMode == "include":
@@ -89,7 +92,8 @@ async def convert_ipynb(
                 code_bg=codeBg,
                 remove_prompt_numbers=remove_prompt_numbers,
                 indent=indent,
-                remove_comments=removeComments == "true"
+                remove_comments=removeComments == "true",
+                document_template=documentTemplate
             )
 
             # Удаляем из сконвертирвоанного файла перамбулу

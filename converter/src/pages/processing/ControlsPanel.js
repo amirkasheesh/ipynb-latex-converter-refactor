@@ -24,7 +24,9 @@ const ControlsPanel = ({
     setIndent,
     removeComments,
     setRemoveComments,
-    downloadDisabled
+    downloadDisabled,
+    documentTemplate,
+    setDocumentTemplate,
 }) => {
     const [mergeMode, setMergeMode] = useState("single");
 
@@ -181,6 +183,17 @@ const ControlsPanel = ({
                 <label className="block-label">
                     Форматирование
                 </label>
+
+                <SelectionDropdown
+                    label="Шаблон оформления"
+                    value={documentTemplate}
+                    onChange={setDocumentTemplate}
+                    options={[
+                        { label: "Стандартный", value: "standard", title: "Оставить стандартное оформление nbconvert" },
+                        { label: "Статья", value: "article", title: "Применить оформление для статьи" },
+                        { label: "Отчет по ГОСТ", value: "gost", title: "Применить поля и базовое оформление отчета" }
+                    ]}
+                />
 
                 <ColorPicker
                     label="Цвет фона ячеек"

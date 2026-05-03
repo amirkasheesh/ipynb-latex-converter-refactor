@@ -18,6 +18,7 @@ const ProcessPageController = () => {
     const [includeCellNumbers, setIncludeCellNumbers] = useState("true");
     const [indent, setIndent] = useState(0);
     const [removeComments, setRemoveComments] = useState("false");
+    const [documentTemplate, setDocumentTemplate] = useState("standard");
 
     const { showToast } = useToast();
     const baseUrl = process.env.REACT_APP_API_URL
@@ -166,6 +167,7 @@ const ProcessPageController = () => {
         formData.append("indent", indent.toString());
         formData.append("removeComments", removeComments);
         formData.append("mergeMode", mergeMode);
+        formData.append("documentTemplate", documentTemplate);
 
         try {
             const response = await fetch(`${baseUrl}convert/`, {
@@ -247,6 +249,8 @@ const ProcessPageController = () => {
             setIndent={setIndent}
             removeComments={removeComments}
             setRemoveComments={setRemoveComments}
+            documentTemplate={documentTemplate}
+            setDocumentTemplate={setDocumentTemplate}
         />
     );
 };
