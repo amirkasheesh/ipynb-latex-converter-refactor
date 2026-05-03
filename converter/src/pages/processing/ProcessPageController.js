@@ -9,6 +9,7 @@ const ProcessPageController = () => {
     const [fileId, setFileId] = useState("");
     const [previewPdfUrl, setPreviewPdfUrl] = useState("");
     const [previewTexUrl, setPreviewTexUrl] = useState("");
+    const [latexText, setLatexText] = useState("");
 
     // Настройки конвертации
     const [selectedCells, setSelectedCells] = useState([]);
@@ -183,6 +184,7 @@ const ProcessPageController = () => {
                 setFileId(data.file_id);
                 setPreviewPdfUrl(`${baseUrl}preview/${data.file_id}.pdf`);
                 setPreviewTexUrl(`${baseUrl}preview/${data.file_id}.tex`);
+                setLatexText("");
 
                 showToast("Файл успешно сконвертирован");
             } else {
@@ -251,6 +253,8 @@ const ProcessPageController = () => {
             setRemoveComments={setRemoveComments}
             documentTemplate={documentTemplate}
             setDocumentTemplate={setDocumentTemplate}
+            latexText={latexText}
+            setLatexText={setLatexText}
         />
     );
 };

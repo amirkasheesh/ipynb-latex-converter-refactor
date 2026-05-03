@@ -31,7 +31,9 @@ function ProcessPage({
     removeComments,
     setRemoveComments,
     documentTemplate,
-    setDocumentTemplate
+    setDocumentTemplate,
+    latexText,
+    setLatexText,
 }) {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const location = useLocation();
@@ -172,6 +174,8 @@ function ProcessPage({
                     previewTexUrl={previewTexUrl}
                     previewPdfUrl={previewPdfUrl}
                     width={0.8 * screenWidth - leftWidth - 32}
+                    latexText={latexText}
+                    setLatexText={setLatexText}
                 />
             </div>
             {showModal && (

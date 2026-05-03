@@ -8,13 +8,14 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width }) => {
+const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width, latexText, setLatexText }) => {
     const src = viewMode === "latex" ? previewTexUrl : previewPdfUrl;
     const [numPages, setNumPages] = useState(null);
-    const [latexText, setLatexText] = useState("");
 
     useEffect(() => {
-        if (!previewTexUrl) return;
+        if (!previewTexUrl || previewTexUrl === "loading") {
+            return;
+        }
 
         fetch(previewTexUrl)
             .then((res) => {
@@ -25,7 +26,7 @@ const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width }) => {
             })
             .then(setLatexText)
             .catch(() => setLatexText("Не удалось загрузить документ"));
-    }, [previewTexUrl]);
+    }, [previewTexUrl, setLatexText]);
 
     return (
         <div className="preview-panel">
@@ -46,22 +47,12 @@ const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width }) => {
                             <span>Загрузка превью</span>
                         </div>
                     ) : (
-                        <pre
-                            style={{
-                                whiteSpace: "pre-wrap",
-                                wordBreak: "break-word",
-                                fontFamily: "monospace",
-                                fontSize: "14px",
-                                lineHeight: "1.5",
-                                margin: "0",
-                                padding: "16px",
-                                overflowY: "auto",
-                                height: "100%",
-                                boxSizing: "border-box"
-                            }}
-                        >
-                            {latexText}
-                        </pre>
+                        <textarea
+                            className="latex-editor"
+                            value={latexText}
+                            onChange={(event) => setLatexText(event.target.value)}
+                            spellCheck={false}
+                        />
                     )
                 )
             ) : (
