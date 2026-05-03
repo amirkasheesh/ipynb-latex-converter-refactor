@@ -305,7 +305,7 @@ const ProcessPageController = () => {
             return;
         }
 
-        const fileExtension = format === "pdf" ? ".pdf" : ".zip";
+        const fileExtension = format === "pdf" ? ".pdf" : ".tex";
 
         try {
             const url = `${baseUrl}download/${fileId}${fileExtension}`
