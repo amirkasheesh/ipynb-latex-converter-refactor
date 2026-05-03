@@ -75,19 +75,30 @@ async def convert_ipynb(
 
     elif mergeMode == "include":
         tex_filenames = []
+        start_index = 0
+
         for i, file in enumerate(files):
-            # Сохраняем по отдельности каждый .ipynb файл
             content = await file.read()
+            notebook = json.loads(content.decode("utf-8"))
+            cells_count = len(notebook.get("cells", []))
+
+            local_selected_cells = file_utils.get_local_selected_cells(
+                selected_cells,
+                start_index,
+                cells_count
+            )
+
+            start_index += cells_count
+
             input_file = output_tex_dir / f"{i}_{file.filename}"
             with open(input_file, "wb") as f:
                 f.write(content)
 
             output_file = output_tex_dir / f"{i}_{Path(file.filename).stem}"
 
-            # Выполняем конвертацию
             conversion.convert_file(
                 input_file=input_file,
-                selected_cells=selected_cells,
+                selected_cells=local_selected_cells,
                 output_file=output_file.stem,
                 code_bg=codeBg,
                 remove_prompt_numbers=remove_prompt_numbers,

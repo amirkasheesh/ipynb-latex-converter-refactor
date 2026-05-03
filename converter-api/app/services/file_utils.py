@@ -56,6 +56,20 @@ def validate_selected_cells(raw_selected_cells: str):
 
     return selected_cells
 
+def get_local_selected_cells(selected_cells, start_index: int, cells_count: int):
+    local_selected_cells = []
+
+    for cell in selected_cells:
+        global_index = cell.get("index")
+
+        if start_index <= global_index < start_index + cells_count:
+            local_selected_cells.append({
+                **cell,
+                "index": global_index - start_index
+            })
+
+    return local_selected_cells
+
 
 def validate_merge_mode(merge_mode: str):
     allowed_modes = {"single", "include"}
