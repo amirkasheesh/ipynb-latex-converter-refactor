@@ -49,10 +49,22 @@ const ProcessPageController = () => {
             let totalIndex = 0;
 
             for (const file of files) {
-                const content = await file.text();
-                const notebook = JSON.parse(content);
+                let notebook;
 
-                const cells = notebook.cells || [];
+                try {
+                    const content = await file.text();
+                    notebook = JSON.parse(content);
+                } catch (error) {
+                    showToast(`Файл ${file.name} должен быть корректным JSON-документом Jupyter Notebook`);
+                    return;
+                }
+
+                if (!notebook || typeof notebook !== "object" || !Array.isArray(notebook.cells)) {
+                    showToast(`Файл ${file.name} должен содержать список ячеек cells`);
+                    return;
+                }
+
+                const cells = notebook.cells;
 
                 const fileCells = cells.map((cell, index) => {
                     selected.push({
@@ -121,6 +133,15 @@ const ProcessPageController = () => {
         setSelectionMode("custom");
     };
 
+    const getErrorMessage = async (response) => {
+        try {
+            const data = await response.json();
+            return data.error || "Ошибка конвертации файлов";
+        } catch (error) {
+            return "Ошибка конвертации файлов";
+        }
+    };
+
     const handleConvert = async (files, mergeMode = "single") => {
         if (!files || files.length === 0) {
             showToast("Сначала необходимо выбрать файлы");
@@ -166,9 +187,13 @@ const ProcessPageController = () => {
                 setPreviewPdfUrl(prevPdfUrl);
                 setPreviewTexUrl(prevTexUrl);
 
-                showToast("Ошибка конвертации файлов");
+                const errorMessage = await getErrorMessage(response);
+                showToast(errorMessage);
             }
         } catch (error) {
+            setPreviewPdfUrl(prevPdfUrl);
+            setPreviewTexUrl(prevTexUrl);
+
             showToast(`Ошибка: ${error}`);
         }
     };
