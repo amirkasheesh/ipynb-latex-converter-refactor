@@ -144,6 +144,53 @@ const ProcessPageController = () => {
         }
     };
 
+    const handleCompileTex = async () => {
+        if (!fileId) {
+            showToast("Сначала необходимо сконвертировать файл");
+            return;
+        }
+
+        if (!latexText.trim()) {
+            showToast("LaTeX-код пустой");
+            return;
+        }
+
+        const prevPdfUrl = previewPdfUrl;
+        setPreviewPdfUrl("loading");
+
+        const formData = new FormData();
+        formData.append("texContent", latexText);
+
+        try {
+            const response = await fetch(`${baseUrl}compile-tex/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Session-ID": sessionId
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const cacheKey = Date.now();
+
+                setFileId(data.file_id);
+                setPreviewPdfUrl(`${baseUrl}preview/${data.file_id}.pdf?v=${cacheKey}`);
+                setPreviewTexUrl(`${baseUrl}preview/${data.file_id}.tex?v=${cacheKey}`);
+
+                showToast("PDF успешно обновлен из LaTeX-кода");
+            } else {
+                setPreviewPdfUrl(prevPdfUrl);
+
+                const errorMessage = await getErrorMessage(response);
+                showToast(errorMessage);
+            }
+        } catch (error) {
+            setPreviewPdfUrl(prevPdfUrl);
+            showToast(`Ошибка: ${error}`);
+        }
+    };
+
     const handleConvert = async (files, mergeMode = "single") => {
         if (!files || files.length === 0) {
             showToast("Сначала необходимо выбрать файлы");
@@ -255,6 +302,7 @@ const ProcessPageController = () => {
             setDocumentTemplate={setDocumentTemplate}
             latexText={latexText}
             setLatexText={setLatexText}
+            onCompileTex={handleCompileTex}
         />
     );
 };

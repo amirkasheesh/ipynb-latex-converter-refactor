@@ -139,6 +139,79 @@ async def convert_ipynb(
 
     return {"file_id": unique_id, "merged": mergeMode == "include"}
 
+@router.post("/compile-tex/")
+async def compile_edited_tex(
+    session_id: str = Header(..., alias="X-Session-ID"),
+    texContent: str = Form(...)
+):
+    output_dir = UPLOAD_DIR / session_id
+    output_tex_dir = output_dir / "tex"
+
+    if not output_tex_dir.exists():
+        return JSONResponse(
+            content={"error": "Сначала необходимо выполнить конвертацию .ipynb файла"},
+            status_code=400
+        )
+
+    if len(texContent.encode("utf-8")) > 10 * 1024 * 1024:
+        return JSONResponse(
+            content={"error": "Размер LaTeX-кода слишком большой"},
+            status_code=400
+        )
+
+    tex_file_path = output_tex_dir / f"{session_id}.tex"
+    pdf_file_name = f"{session_id}.pdf"
+
+    if not tex_file_path.exists():
+        tex_file_path = output_tex_dir / "main.tex"
+        pdf_file_name = "main.pdf"
+
+    if not tex_file_path.exists():
+        return JSONResponse(
+            content={"error": "Не найден .tex файл для пересборки PDF"},
+            status_code=404
+        )
+
+    tex_file_path.write_text(texContent, encoding="utf-8")
+
+    try:
+        result = subprocess.run(
+            [
+                "xelatex",
+                "-interaction=nonstopmode",
+                tex_file_path.name
+            ],
+            cwd=output_tex_dir,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+    except subprocess.TimeoutExpired:
+        return JSONResponse(
+            content={"error": "Сборка PDF заняла слишком много времени"},
+            status_code=400
+        )
+
+    generated_pdf_path = output_tex_dir / pdf_file_name
+
+    if result.returncode != 0 or not generated_pdf_path.exists():
+        log = (result.stdout or "") + "\n" + (result.stderr or "")
+
+        return JSONResponse(
+            content={
+                "error": "Не удалось собрать PDF из отредактированного LaTeX-кода",
+                "log": log[-4000:]
+            },
+            status_code=400
+        )
+
+    final_pdf_path = output_dir / pdf_file_name
+    generated_pdf_path.replace(final_pdf_path)
+
+    file_utils.delete_aux_files(output_tex_dir=output_tex_dir)
+    file_utils.create_zip_with_images(output_dir, session_id)
+
+    return {"file_id": session_id}
 
 @router.get("/preview/{file_name}")
 async def preview_file(file_name: str):

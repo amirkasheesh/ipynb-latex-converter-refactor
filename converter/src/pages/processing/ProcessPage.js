@@ -34,6 +34,7 @@ function ProcessPage({
     setDocumentTemplate,
     latexText,
     setLatexText,
+    onCompileTex
 }) {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const location = useLocation();
@@ -168,6 +169,14 @@ function ProcessPage({
                         selected={viewMode}
                         onChange={setViewMode}
                     />
+                    <button
+                        className="compile-tex-button"
+                        onClick={onCompileTex}
+                        disabled={!previewTexUrl || previewTexUrl === "loading" || !latexText.trim()}
+                        title="Собрать PDF из отредактированного LaTeX-кода"
+                    >
+                        Обновить PDF
+                    </button>
                 </div>
                 <PreviewPanel
                     viewMode={viewMode}
