@@ -32,6 +32,42 @@ async def validate_ipynb_file(file):
 
     await file.seek(0)
 
+def validate_selected_cells(raw_selected_cells: str):
+    try:
+        selected_cells = json.loads(raw_selected_cells)
+    except Exception:
+        raise ValueError("selectedCells должен быть корректным JSON")
+
+    if not isinstance(selected_cells, list):
+        raise ValueError("selectedCells должен быть списком")
+
+    for cell in selected_cells:
+        if not isinstance(cell, dict):
+            raise ValueError("Каждый элемент selectedCells должен быть объектом")
+
+        if "index" not in cell or not isinstance(cell["index"], int) or cell["index"] < 0:
+            raise ValueError("Каждая выбранная ячейка должна содержать неотрицательный index")
+
+        if "includeSource" not in cell or not isinstance(cell["includeSource"], bool):
+            raise ValueError("Каждая выбранная ячейка должна содержать includeSource типа boolean")
+
+        if "includeResults" not in cell or not isinstance(cell["includeResults"], bool):
+            raise ValueError("Каждая выбранная ячейка должна содержать includeResults типа boolean")
+
+    return selected_cells
+
+
+def validate_merge_mode(merge_mode: str):
+    allowed_modes = {"single", "include"}
+
+    if merge_mode not in allowed_modes:
+        raise ValueError("mergeMode должен быть single или include")
+
+
+def validate_bool_form_value(value: str, field_name: str):
+    if value not in {"true", "false"}:
+        raise ValueError(f"{field_name} должен быть true или false")
+
 
 def remove_extension(file_name):
     return os.path.splitext(file_name)[0]

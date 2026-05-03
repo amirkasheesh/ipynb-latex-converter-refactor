@@ -24,13 +24,17 @@ async def convert_ipynb(
     try:
         for file in files:
             await file_utils.validate_ipynb_file(file)
+        selected_cells = file_utils.validate_selected_cells(selectedCells)
+        file_utils.validate_merge_mode(mergeMode)
+        file_utils.validate_bool_form_value(includeCellNumbers, "includeCellNumbers")
+        file_utils.validate_bool_form_value(removeComments, "removeComments")
     except ValueError as e:
-            return JSONResponse(content={"error": str(e)}, status_code=400)
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
     # Если директория для данной сессии уже существовала, удаляем её
     file_utils.clear_directory(UPLOAD_DIR / session_id)
     unique_id = session_id
     remove_prompt_numbers = includeCellNumbers != "true"
-    selected_cells = json.loads(selectedCells)
 
     # Директория для хранения итоговых файлов
     output_dir = UPLOAD_DIR / unique_id
