@@ -1,3 +1,6 @@
+import CodeMirror from "@uiw/react-codemirror";
+import { StreamLanguage } from "@codemirror/language";
+import { stex } from "@codemirror/legacy-modes/mode/stex";
 import React, { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -47,11 +50,17 @@ const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width, latexText
                             <span>Загрузка превью</span>
                         </div>
                     ) : (
-                        <textarea
+                        <CodeMirror
                             className="latex-editor"
                             value={latexText}
-                            onChange={(event) => setLatexText(event.target.value)}
-                            spellCheck={false}
+                            height="100%"
+                            extensions={[StreamLanguage.define(stex)]}
+                            onChange={(value) => setLatexText(value)}
+                            basicSetup={{
+                                lineNumbers: true,
+                                highlightActiveLine: true,
+                                foldGutter: true
+                            }}
                         />
                     )
                 )

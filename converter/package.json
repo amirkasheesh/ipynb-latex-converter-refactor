@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/legacy-modes": "^6.5.2",
     "@tanstack/react-table": "^8.21.2",
+    "@uiw/react-codemirror": "^4.25.9",
     "cra-template": "1.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
