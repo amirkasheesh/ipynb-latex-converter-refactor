@@ -1,7 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ProcessPage from "./ProcessPage";
 import { useToast } from "../../design_kit/notification/ToastContext";
 import { v4 as uuidv4 } from "uuid";
+
+const getSavedSetting = (key, defaultValue) => {
+    const savedValue = localStorage.getItem(key);
+    return savedValue === null ? defaultValue : savedValue;
+};
+
+const getSavedBooleanSetting = (key, defaultValue) => {
+    const savedValue = localStorage.getItem(key);
+
+    if (savedValue === null) {
+        return defaultValue;
+    }
+
+    return savedValue === "true";
+};
 
 const ProcessPageController = () => {
     // Отображение файлов
@@ -15,11 +30,46 @@ const ProcessPageController = () => {
     const [selectedCells, setSelectedCells] = useState([]);
     const [selectionMode, setSelectionMode] = useState("all");
     const [outputSelectionMode, setOutputSelectionMode] = useState("all");
-    const [codeBg, setCodeBg] = useState("#f6f8fa");
-    const [includeCellNumbers, setIncludeCellNumbers] = useState("true");
-    const [indent, setIndent] = useState(0);
-    const [removeComments, setRemoveComments] = useState("false");
-    const [documentTemplate, setDocumentTemplate] = useState("standard");
+
+    const [codeBg, setCodeBg] = useState(() =>
+    getSavedSetting("codeBg", "#f6f8fa")
+    );
+
+    const [includeCellNumbers, setIncludeCellNumbers] = useState(() =>
+        getSavedSetting("includeCellNumbers", "true")
+    );
+
+    const [indent, setIndent] = useState(() =>
+        Number(getSavedSetting("indent", 0))
+    );
+
+    const [removeComments, setRemoveComments] = useState(() =>
+        getSavedSetting("removeComments", "false")
+    );
+
+    const [documentTemplate, setDocumentTemplate] = useState(() =>
+        getSavedSetting("documentTemplate", "standard")
+    );
+
+    useEffect(() => {
+        localStorage.setItem("codeBg", codeBg);
+    }, [codeBg]);
+
+    useEffect(() => {
+        localStorage.setItem("includeCellNumbers", includeCellNumbers);
+    }, [includeCellNumbers]);
+
+    useEffect(() => {
+        localStorage.setItem("indent", String(indent));
+    }, [indent]);
+
+    useEffect(() => {
+        localStorage.setItem("removeComments", removeComments);
+    }, [removeComments]);
+
+    useEffect(() => {
+        localStorage.setItem("documentTemplate", documentTemplate);
+    }, [documentTemplate]);
 
     const { showToast } = useToast();
     const baseUrl = process.env.REACT_APP_API_URL
