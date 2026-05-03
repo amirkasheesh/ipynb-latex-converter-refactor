@@ -34,7 +34,8 @@ function ProcessPage({
     setDocumentTemplate,
     latexText,
     setLatexText,
-    onCompileTex
+    onCompileTex,
+    latexErrorLog
 }) {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const location = useLocation();
@@ -185,6 +186,7 @@ function ProcessPage({
                     width={0.8 * screenWidth - leftWidth - 32}
                     latexText={latexText}
                     setLatexText={setLatexText}
+                    latexErrorLog={latexErrorLog}
                 />
             </div>
             {showModal && (

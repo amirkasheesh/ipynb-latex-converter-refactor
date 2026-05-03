@@ -43,3 +43,28 @@
     color: var(--secondary-text-color);
     border-right: 1px solid var(--tertiary-bg-color);
 }
+
+.latex-error-log {
+    max-height: 220px;
+    overflow: auto;
+    margin: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--secondary-bg-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--tertiary-bg-color);
+    box-sizing: border-box;
+}
+
+.latex-error-log-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.latex-error-log pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: monospace;
+    font-size: 12px;
+}

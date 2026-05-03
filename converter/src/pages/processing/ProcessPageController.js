@@ -25,6 +25,7 @@ const ProcessPageController = () => {
     const [previewPdfUrl, setPreviewPdfUrl] = useState("");
     const [previewTexUrl, setPreviewTexUrl] = useState("");
     const [latexText, setLatexText] = useState("");
+    const [latexErrorLog, setLatexErrorLog] = useState("");
 
     // Настройки конвертации
     const [selectedCells, setSelectedCells] = useState([]);
@@ -185,12 +186,19 @@ const ProcessPageController = () => {
         setSelectionMode("custom");
     };
 
-    const getErrorMessage = async (response) => {
+    const getErrorData = async (response) => {
         try {
             const data = await response.json();
-            return data.error || "Ошибка конвертации файлов";
+
+            return {
+                message: data.error || "Ошибка конвертации файлов",
+                log: data.log || ""
+            };
         } catch (error) {
-            return "Ошибка конвертации файлов";
+            return {
+                message: "Ошибка конвертации файлов",
+                log: ""
+            };
         }
     };
 
@@ -227,13 +235,15 @@ const ProcessPageController = () => {
                 setFileId(data.file_id);
                 setPreviewPdfUrl(`${baseUrl}preview/${data.file_id}.pdf?v=${cacheKey}`);
                 setPreviewTexUrl(`${baseUrl}preview/${data.file_id}.tex?v=${cacheKey}`);
+                setLatexErrorLog("");
 
                 showToast("PDF успешно обновлен из LaTeX-кода");
             } else {
                 setPreviewPdfUrl(prevPdfUrl);
 
-                const errorMessage = await getErrorMessage(response);
-                showToast(errorMessage);
+                const errorData = await getErrorData(response);
+                setLatexErrorLog(errorData.log);
+                showToast(errorData.message);
             }
         } catch (error) {
             setPreviewPdfUrl(prevPdfUrl);
@@ -282,14 +292,16 @@ const ProcessPageController = () => {
                 setPreviewPdfUrl(`${baseUrl}preview/${data.file_id}.pdf`);
                 setPreviewTexUrl(`${baseUrl}preview/${data.file_id}.tex`);
                 setLatexText("");
+                setLatexErrorLog("");
 
                 showToast("Файл успешно сконвертирован");
             } else {
                 setPreviewPdfUrl(prevPdfUrl);
                 setPreviewTexUrl(prevTexUrl);
 
-                const errorMessage = await getErrorMessage(response);
-                showToast(errorMessage);
+                const errorData = await getErrorData(response);
+                setLatexErrorLog(errorData.log);
+                showToast(errorData.message);
             }
         } catch (error) {
             setPreviewPdfUrl(prevPdfUrl);
@@ -353,6 +365,8 @@ const ProcessPageController = () => {
             latexText={latexText}
             setLatexText={setLatexText}
             onCompileTex={handleCompileTex}
+            latexErrorLog={latexErrorLog}
+            setLatexErrorLog={setLatexErrorLog}
         />
     );
 };

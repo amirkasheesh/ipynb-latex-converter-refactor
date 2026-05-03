@@ -11,7 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width, latexText, setLatexText }) => {
+const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width, latexText, setLatexText, latexErrorLog }) => {
     const src = viewMode === "latex" ? previewTexUrl : previewPdfUrl;
     const [numPages, setNumPages] = useState(null);
 
@@ -120,6 +120,12 @@ const PreviewPanel = ({ viewMode, previewTexUrl, previewPdfUrl, width, latexText
                         </Document>
                     )
                     )}
+                </div>
+            )}
+            {latexErrorLog && (
+                <div className="latex-error-log">
+                    <div className="latex-error-log-title">Лог ошибки LaTeX</div>
+                    <pre>{latexErrorLog}</pre>
                 </div>
             )}
         </div >
