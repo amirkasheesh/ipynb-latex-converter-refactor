@@ -30,7 +30,7 @@
     font-family: monospace;
     font-size: 14px;
     line-height: 1.5;
-    background: #111111;
-    color: #f5f5f5;
+    background: var(--editor-bg-color);
+    color: var(--editor-text-color);
     overflow: auto;
 }

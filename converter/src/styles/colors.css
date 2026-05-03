@@ -1,4 +1,5 @@
-:root {
+:root,
+:root[data-theme="light"] {
     --primary-bg-color: rgb(255, 255, 255);
     --secondary-bg-color: #f2f2f2;
     --tertiary-bg-color: #dbd8d8;
@@ -9,19 +10,31 @@
     --primary-button-bg: rgb(41, 52, 98);
     --primary-button-bg-hover: rgb(34, 87, 122);
     --primary-button-text: rgb(255, 255, 255);
+
+    --input-bg-color: rgb(255, 255, 255);
+    --input-bg-hover-color: #eaeaea;
+    --input-text-color: rgb(0, 0, 0);
+
+    --editor-bg-color: #ffffff;
+    --editor-text-color: #111111;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --primary-bg-color: rgb(28, 28, 28);
-        --secondary-bg-color: rgb(0, 0, 0);
-        --tertiary-bg-color: rgb(50, 50, 50);
-        
-        --primary-text-color: rgb(255, 255, 255);
-        --secondary-text-color: rgb(127, 127, 127);
+:root[data-theme="dark"] {
+    --primary-bg-color: rgb(28, 28, 28);
+    --secondary-bg-color: rgb(0, 0, 0);
+    --tertiary-bg-color: rgb(50, 50, 50);
 
-        --primary-button-bg: rgb(255, 255, 255);
-        --primary-button-bg-hover: rgb(205, 205, 205);
-        --primary-button-text: rgb(0, 0, 0);
-    }
+    --primary-text-color: rgb(255, 255, 255);
+    --secondary-text-color: rgb(170, 170, 170);
+
+    --primary-button-bg: rgb(255, 255, 255);
+    --primary-button-bg-hover: rgb(205, 205, 205);
+    --primary-button-text: rgb(0, 0, 0);
+
+    --input-bg-color: rgb(45, 45, 45);
+    --input-bg-hover-color: rgb(60, 60, 60);
+    --input-text-color: rgb(255, 255, 255);
+
+    --editor-bg-color: #111111;
+    --editor-text-color: #f5f5f5;
 }

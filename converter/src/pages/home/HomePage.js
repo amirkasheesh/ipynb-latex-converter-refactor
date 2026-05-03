@@ -2,10 +2,13 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
 import { useToast } from "../../design_kit/notification/ToastContext";
+import { useTheme } from "../../theme/ThemeContext";
 
 function HomePage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  const { theme, setTheme } = useTheme();
 
   const handleFileChange = (event) => {
     const selectedFiles = Array.from(event.target.files);
@@ -25,6 +28,20 @@ function HomePage() {
           Веб-приложение
           <br></br>для обработки текста, полученного nbconvert
           <br></br>и содержащего формулы Latex</h1>
+        <div className="home-theme-switcher">
+          <button
+            className={theme === "light" ? "theme-button theme-button-active" : "theme-button"}
+            onClick={() => setTheme("light")}
+          >
+            Светлая
+          </button>
+          <button
+            className={theme === "dark" ? "theme-button theme-button-active" : "theme-button"}
+            onClick={() => setTheme("dark")}
+          >
+            Темная
+          </button>
+        </div>
         <div>
           <label htmlFor="file-input" className="file-label">
             Выбрать файлы

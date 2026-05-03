@@ -67,3 +67,28 @@
 .footer a:last-child {
     margin-right: 0;
 }
+
+.home-theme-switcher {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.theme-button {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    background: var(--tertiary-bg-color);
+    color: var(--primary-text-color);
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.theme-button:hover {
+    background: var(--input-bg-hover-color);
+}
+
+.theme-button-active {
+    background: var(--primary-button-bg);
+    color: var(--primary-button-text);
+}
