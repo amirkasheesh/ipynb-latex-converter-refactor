@@ -123,8 +123,14 @@ const ControlsPanel = ({
             <DropdownButton
                 title="Скачать"
                 options={[
-                    { label: "Скачать .tex", action: () => handleDownload(files[0], "tex") },
-                    { label: "Скачать .pdf", action: () => handleDownload(files[0], "pdf") }
+                    {
+                        label: mergeMode === "include" ? "Скачать .zip" : "Скачать .tex",
+                        action: () => handleDownload(files[0], "tex", mergeMode)
+                    },
+                    {
+                        label: "Скачать .pdf",
+                        action: () => handleDownload(files[0], "pdf", mergeMode)
+                    }
                 ]}
                 disabled={downloadDisabled}
             />

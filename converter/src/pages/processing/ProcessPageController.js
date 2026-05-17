@@ -311,22 +311,43 @@ const ProcessPageController = () => {
         }
     };
 
-    const handleDownload = async (file, format) => {
+    const handleDownload = async (file, format, mergeMode = "single") => {
         if (!fileId) {
             showToast("Сначала необходимо сконвертировать файлы");
             return;
         }
 
-        const fileExtension = format === "pdf" ? ".pdf" : ".tex";
+        const fileExtension =
+            format === "pdf"
+                ? ".pdf"
+                : mergeMode === "include"
+                    ? ".zip"
+                    : ".tex";
 
         try {
-            const url = `${baseUrl}download/${fileId}${fileExtension}`
+            const url = `${baseUrl}download/${fileId}${fileExtension}`;
             const response = await fetch(url);
+
+            if (!response.ok) {
+                const errorData = await getErrorData(response);
+                showToast(errorData.message);
+                return;
+            }
+
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
+
             link.href = blobUrl;
-            link.download = file.name.replace(".ipynb", fileExtension);
+
+            if (format === "pdf") {
+                link.download = file.name.replace(".ipynb", ".pdf");
+            } else if (mergeMode === "include") {
+                link.download = "tex_files.zip";
+            } else {
+                link.download = file.name.replace(".ipynb", ".tex");
+            }
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

@@ -131,37 +131,59 @@ def get_preview_response(file_name: str):
 
 
 def get_download_response(file_name: str):
-    requiredFileExtension = get_extension(file_name)
-    file_name = remove_extension(file_name)
-    pdf_file_path_single = UPLOAD_DIR / file_name / f"{file_name}.pdf"
-    pdf_file_path_include = UPLOAD_DIR / file_name / "main.pdf"
-    tex_file_path = UPLOAD_DIR / file_name / f"{file_name}.zip"
+    required_file_extension = get_extension(file_name)
+    session_id = remove_extension(file_name)
+    session_dir = UPLOAD_DIR / session_id
+    pdf_file_path_single = session_dir / f"{session_id}.pdf"
+    pdf_file_path_include = session_dir / "main.pdf"
+    single_tex_file_path = session_dir / "tex" / f"{session_id}.tex"
+    zip_file_path = session_dir / f"{session_id}.zip"
 
-    if requiredFileExtension == "pdf":
-        if pdf_file_path_single.exists():
-            return FileResponse(
-                pdf_file_path_single,
-                media_type="application/pdf",
-                filename=f"{file_name}.pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename={file_name}.pdf"}
-            )
-        elif pdf_file_path_include.exists():
-            return FileResponse(
-                pdf_file_path_include,
-                media_type="application/pdf",
-                filename=f"{file_name}.pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename={file_name}.pdf"}
-            )
-    elif requiredFileExtension == "zip" and tex_file_path.exists():
+    if required_file_extension == "pdf" and pdf_file_path_single.exists():
         return FileResponse(
-            tex_file_path,
-            media_type="application/zip",
-            filename=f"{file_name}.zip",
-            headers={"Content-Disposition": f"attachment; filename={file_name}.zip"}
+            pdf_file_path_single,
+            media_type="application/pdf",
+            filename=f"{session_id}.pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{session_id}.pdf"'
+            },
         )
-    return JSONResponse(content={"error": f"File not found: {file_name}"}, status_code=404)
+
+    if required_file_extension == "pdf" and pdf_file_path_include.exists():
+        return FileResponse(
+            pdf_file_path_include,
+            media_type="application/pdf",
+            filename="main.pdf",
+            headers={
+                "Content-Disposition": 'attachment; filename="main.pdf"'
+            },
+        )
+
+    if required_file_extension == "tex" and single_tex_file_path.exists():
+        return FileResponse(
+            single_tex_file_path,
+            media_type="text/plain",
+            filename=f"{session_id}.tex",
+            headers={
+                "Content-Disposition": f'attachment; filename="{session_id}.tex"'
+            },
+        )
+
+    if required_file_extension == "zip" and zip_file_path.exists():
+        return FileResponse(
+            zip_file_path,
+            media_type="application/zip",
+            filename=f"{session_id}.zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{session_id}.zip"'
+            },
+        )
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": f"File not found: {file_name}"
+        },
+    )
 
 
 def clear_directory(directory_path: Path):
