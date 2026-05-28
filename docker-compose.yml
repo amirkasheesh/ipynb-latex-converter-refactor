@@ -3,12 +3,14 @@ services:
     build:
       context: ./converter
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://127.0.0.1:8000/}
     container_name: converter
     ports:
-      - "80:3000"
+      - "3000:3000"
     env_file:
-      - ${ENV_FILE}
+      - ${ENV_FILE:-.env.development}
+    depends_on:
+      - backend
 
   backend:
     build:

@@ -14,7 +14,8 @@ def convert_file(
         code_bg,
         remove_prompt_numbers,
         indent: int,
-        remove_comments: bool
+        remove_comments: bool,
+        document_template: str
 ):
     temp_ipynb = input_file.parent / f"temp_filtered_{uuid.uuid4().hex}.ipynb"
     output_tex = input_file.parent / f"{output_file}.tex"
@@ -92,7 +93,8 @@ def convert_file(
         code_bg,
         remove_prompt_numbers,
         indent,
-        remove_comments
+        remove_comments,
+        document_template
     )
 
     with open(output_tex, 'w', encoding='utf-8') as f:

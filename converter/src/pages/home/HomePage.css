@@ -67,3 +67,55 @@
 .footer a:last-child {
     margin-right: 0;
 }
+
+.home-theme-switcher {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.theme-button {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    background: var(--tertiary-bg-color);
+    color: var(--primary-text-color);
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.theme-button:hover {
+    background: var(--input-bg-hover-color);
+}
+
+.theme-button-active {
+    background: var(--primary-button-bg);
+    color: var(--primary-button-text);
+}
+
+.instruction-card {
+    max-width: 760px;
+    margin: 24px auto;
+    padding: 20px 24px;
+    border-radius: 18px;
+    background: var(--secondary-bg-color);
+    color: var(--primary-text-color);
+    text-align: left;
+    box-sizing: border-box;
+}
+
+.instruction-card h2 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+    text-align: center;
+}
+
+.instruction-card ol {
+    margin: 0;
+    padding-left: 22px;
+}
+
+.instruction-card li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}

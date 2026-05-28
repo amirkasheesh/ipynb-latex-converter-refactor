@@ -19,13 +19,24 @@ async def convert_ipynb(
     includeCellNumbers: str = Form("true"),
     indent: int = Form(0),
     removeComments: str = Form("false"),
-    mergeMode: str = Form("single")  # "single" или "include"
+    mergeMode: str = Form("single"),  # "single" или "include"
+    documentTemplate: str = Form("standard")
 ):
+    try:
+        for file in files:
+            await file_utils.validate_ipynb_file(file)
+        selected_cells = file_utils.validate_selected_cells(selectedCells)
+        file_utils.validate_merge_mode(mergeMode)
+        file_utils.validate_bool_form_value(includeCellNumbers, "includeCellNumbers")
+        file_utils.validate_bool_form_value(removeComments, "removeComments")
+        file_utils.validate_document_template(documentTemplate)
+    except ValueError as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
     # Если директория для данной сессии уже существовала, удаляем её
     file_utils.clear_directory(UPLOAD_DIR / session_id)
     unique_id = session_id
     remove_prompt_numbers = includeCellNumbers != "true"
-    selected_cells = json.loads(selectedCells)
 
     # Директория для хранения итоговых файлов
     output_dir = UPLOAD_DIR / unique_id
@@ -58,29 +69,42 @@ async def convert_ipynb(
             code_bg=codeBg,
             remove_prompt_numbers=remove_prompt_numbers,
             indent=indent,
-            remove_comments=removeComments == "true"
+            remove_comments=removeComments == "true",
+            document_template=documentTemplate
         )
 
     elif mergeMode == "include":
         tex_filenames = []
+        start_index = 0
+
         for i, file in enumerate(files):
-            # Сохраняем по отдельности каждый .ipynb файл
             content = await file.read()
+            notebook = json.loads(content.decode("utf-8"))
+            cells_count = len(notebook.get("cells", []))
+
+            local_selected_cells = file_utils.get_local_selected_cells(
+                selected_cells,
+                start_index,
+                cells_count
+            )
+
+            start_index += cells_count
+
             input_file = output_tex_dir / f"{i}_{file.filename}"
             with open(input_file, "wb") as f:
                 f.write(content)
 
             output_file = output_tex_dir / f"{i}_{Path(file.filename).stem}"
 
-            # Выполняем конвертацию
             conversion.convert_file(
                 input_file=input_file,
-                selected_cells=selected_cells,
+                selected_cells=local_selected_cells,
                 output_file=output_file.stem,
                 code_bg=codeBg,
                 remove_prompt_numbers=remove_prompt_numbers,
                 indent=indent,
-                remove_comments=removeComments == "true"
+                remove_comments=removeComments == "true",
+                document_template=documentTemplate
             )
 
             # Удаляем из сконвертирвоанного файла перамбулу
@@ -126,6 +150,79 @@ async def convert_ipynb(
 
     return {"file_id": unique_id, "merged": mergeMode == "include"}
 
+@router.post("/compile-tex/")
+async def compile_edited_tex(
+    session_id: str = Header(..., alias="X-Session-ID"),
+    texContent: str = Form(...)
+):
+    output_dir = UPLOAD_DIR / session_id
+    output_tex_dir = output_dir / "tex"
+
+    if not output_tex_dir.exists():
+        return JSONResponse(
+            content={"error": "Сначала необходимо выполнить конвертацию .ipynb файла"},
+            status_code=400
+        )
+
+    if len(texContent.encode("utf-8")) > 10 * 1024 * 1024:
+        return JSONResponse(
+            content={"error": "Размер LaTeX-кода слишком большой"},
+            status_code=400
+        )
+
+    tex_file_path = output_tex_dir / f"{session_id}.tex"
+    pdf_file_name = f"{session_id}.pdf"
+
+    if not tex_file_path.exists():
+        tex_file_path = output_tex_dir / "main.tex"
+        pdf_file_name = "main.pdf"
+
+    if not tex_file_path.exists():
+        return JSONResponse(
+            content={"error": "Не найден .tex файл для пересборки PDF"},
+            status_code=404
+        )
+
+    tex_file_path.write_text(texContent, encoding="utf-8")
+
+    try:
+        result = subprocess.run(
+            [
+                "xelatex",
+                "-interaction=nonstopmode",
+                tex_file_path.name
+            ],
+            cwd=output_tex_dir,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+    except subprocess.TimeoutExpired:
+        return JSONResponse(
+            content={"error": "Сборка PDF заняла слишком много времени"},
+            status_code=400
+        )
+
+    generated_pdf_path = output_tex_dir / pdf_file_name
+
+    if result.returncode != 0 or not generated_pdf_path.exists():
+        log = (result.stdout or "") + "\n" + (result.stderr or "")
+
+        return JSONResponse(
+            content={
+                "error": "Не удалось собрать PDF из отредактированного LaTeX-кода",
+                "log": log[-4000:]
+            },
+            status_code=400
+        )
+
+    final_pdf_path = output_dir / pdf_file_name
+    generated_pdf_path.replace(final_pdf_path)
+
+    file_utils.delete_aux_files(output_tex_dir=output_tex_dir)
+    file_utils.create_zip_with_images(output_dir, session_id)
+
+    return {"file_id": session_id}
 
 @router.get("/preview/{file_name}")
 async def preview_file(file_name: str):

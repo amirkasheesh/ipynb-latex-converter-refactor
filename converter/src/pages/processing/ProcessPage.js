@@ -29,7 +29,13 @@ function ProcessPage({
     indent,
     setIndent,
     removeComments,
-    setRemoveComments
+    setRemoveComments,
+    documentTemplate,
+    setDocumentTemplate,
+    latexText,
+    setLatexText,
+    onCompileTex,
+    latexErrorLog
 }) {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const location = useLocation();
@@ -136,6 +142,8 @@ function ProcessPage({
                         removeComments={removeComments}
                         setRemoveComments={setRemoveComments}
                         downloadDisabled={previewTexUrl === ''}
+                        documentTemplate={documentTemplate}
+                        setDocumentTemplate={setDocumentTemplate}
                     />
                 </div>
             </div>
@@ -162,12 +170,23 @@ function ProcessPage({
                         selected={viewMode}
                         onChange={setViewMode}
                     />
+                    <button
+                        className="compile-tex-button"
+                        onClick={onCompileTex}
+                        disabled={!previewTexUrl || previewTexUrl === "loading" || !latexText.trim()}
+                        title="Собрать PDF из отредактированного LaTeX-кода"
+                    >
+                        Обновить PDF
+                    </button>
                 </div>
                 <PreviewPanel
                     viewMode={viewMode}
                     previewTexUrl={previewTexUrl}
                     previewPdfUrl={previewPdfUrl}
                     width={0.8 * screenWidth - leftWidth - 32}
+                    latexText={latexText}
+                    setLatexText={setLatexText}
+                    latexErrorLog={latexErrorLog}
                 />
             </div>
             {showModal && (

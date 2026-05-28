@@ -65,6 +65,7 @@
 }
 
 .process-settins-column-header {
+    gap: 12px;
     height: 36px;
     min-height: 36px;
     max-height: 36px;
@@ -216,4 +217,24 @@
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+
+.compile-tex-button {
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    background-color: var(--primary-button-bg);
+    color: var(--primary-button-text);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.compile-tex-button:hover {
+    background-color: var(--primary-button-bg-hover);
+}
+
+.compile-tex-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

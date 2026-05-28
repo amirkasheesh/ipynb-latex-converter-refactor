@@ -14,7 +14,8 @@
 
 .select-container select {
     border: none;
-    background: white;
+    background: var(--input-bg-color);
+    color: var(--input-text-color);
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 10px;
@@ -24,7 +25,7 @@
 }
 
 .select-container select:hover {
-    background: #eaeaea;
+    background: var(--input-bg-hover-color);
 }
 
 .select-container select:focus {

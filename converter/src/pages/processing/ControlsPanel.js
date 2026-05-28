@@ -5,6 +5,7 @@ import SelectionDropdown from "../../design_kit/selection_dropdown/SelectionDrop
 import ColorPicker from "../../design_kit/color_picker/ColorPicker";
 import TextInput from "../../design_kit/text_input/TextInput"
 import "./styles/ControlsPanel.css";
+import { useTheme } from "../../theme/ThemeContext";
 
 const ControlsPanel = ({
     files,
@@ -24,9 +25,13 @@ const ControlsPanel = ({
     setIndent,
     removeComments,
     setRemoveComments,
-    downloadDisabled
+    downloadDisabled,
+    documentTemplate,
+    setDocumentTemplate,
 }) => {
     const [mergeMode, setMergeMode] = useState("single");
+
+    const { theme, setTheme } = useTheme();
 
     const updateSelectionMode = (mode) => {
         setSelectionMode(mode);
@@ -118,8 +123,14 @@ const ControlsPanel = ({
             <DropdownButton
                 title="Скачать"
                 options={[
-                    { label: "Скачать .tex", action: () => handleDownload(files[0], "tex") },
-                    { label: "Скачать .pdf", action: () => handleDownload(files[0], "pdf") }
+                    {
+                        label: mergeMode === "include" ? "Скачать .zip" : "Скачать .tex",
+                        action: () => handleDownload(files[0], "tex", mergeMode)
+                    },
+                    {
+                        label: "Скачать .pdf",
+                        action: () => handleDownload(files[0], "pdf", mergeMode)
+                    }
                 ]}
                 disabled={downloadDisabled}
             />
@@ -181,6 +192,27 @@ const ControlsPanel = ({
                 <label className="block-label">
                     Форматирование
                 </label>
+
+                <SelectionDropdown
+                    label="Шаблон оформления"
+                    value={documentTemplate}
+                    onChange={setDocumentTemplate}
+                    options={[
+                        { label: "Стандартный", value: "standard", title: "Оставить стандартное оформление nbconvert" },
+                        { label: "Статья", value: "article", title: "Применить оформление для статьи" },
+                        { label: "Отчет по ГОСТ", value: "gost", title: "Применить поля и базовое оформление отчета" }
+                    ]}
+                />
+
+                <SelectionDropdown
+                    label="Тема интерфейса"
+                    value={theme}
+                    onChange={setTheme}
+                    options={[
+                        { label: "Светлая", value: "light", title: "Использовать светлую тему интерфейса" },
+                        { label: "Темная", value: "dark", title: "Использовать темную тему интерфейса" }
+                    ]}
+                />
 
                 <ColorPicker
                     label="Цвет фона ячеек"

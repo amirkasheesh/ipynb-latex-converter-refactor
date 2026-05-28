@@ -3,9 +3,90 @@ from pathlib import Path
 import os
 import zipfile
 import shutil
+import json
 
 UPLOAD_DIR = Path("./uploaded_files")
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
+async def validate_ipynb_file(file):
+    filename = file.filename or ""
+
+    if not filename.lower().endswith(".ipynb"):
+        raise ValueError("Можно загружать только файлы .ipynb")
+
+    content = await file.read()
+
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise ValueError("Размер файла не должен превышать 50 МБ")
+
+    try:
+        notebook = json.loads(content.decode("utf-8"))
+    except Exception:
+        raise ValueError("Файл должен быть корректным JSON-документом Jupyter Notebook")
+
+    if not isinstance(notebook, dict):
+        raise ValueError("Некорректная структура .ipynb файла")
+
+    if "cells" not in notebook or not isinstance(notebook["cells"], list):
+        raise ValueError("В .ipynb файле должен быть список ячеек cells")
+
+    await file.seek(0)
+
+def validate_selected_cells(raw_selected_cells: str):
+    try:
+        selected_cells = json.loads(raw_selected_cells)
+    except Exception:
+        raise ValueError("selectedCells должен быть корректным JSON")
+
+    if not isinstance(selected_cells, list):
+        raise ValueError("selectedCells должен быть списком")
+
+    for cell in selected_cells:
+        if not isinstance(cell, dict):
+            raise ValueError("Каждый элемент selectedCells должен быть объектом")
+
+        if "index" not in cell or not isinstance(cell["index"], int) or cell["index"] < 0:
+            raise ValueError("Каждая выбранная ячейка должна содержать неотрицательный index")
+
+        if "includeSource" not in cell or not isinstance(cell["includeSource"], bool):
+            raise ValueError("Каждая выбранная ячейка должна содержать includeSource типа boolean")
+
+        if "includeResults" not in cell or not isinstance(cell["includeResults"], bool):
+            raise ValueError("Каждая выбранная ячейка должна содержать includeResults типа boolean")
+
+    return selected_cells
+
+def get_local_selected_cells(selected_cells, start_index: int, cells_count: int):
+    local_selected_cells = []
+
+    for cell in selected_cells:
+        global_index = cell.get("index")
+
+        if start_index <= global_index < start_index + cells_count:
+            local_selected_cells.append({
+                **cell,
+                "index": global_index - start_index
+            })
+
+    return local_selected_cells
+
+
+def validate_merge_mode(merge_mode: str):
+    allowed_modes = {"single", "include"}
+
+    if merge_mode not in allowed_modes:
+        raise ValueError("mergeMode должен быть single или include")
+
+
+def validate_bool_form_value(value: str, field_name: str):
+    if value not in {"true", "false"}:
+        raise ValueError(f"{field_name} должен быть true или false")
+
+def validate_document_template(document_template: str):
+    allowed_templates = {"standard", "article", "gost"}
+
+    if document_template not in allowed_templates:
+        raise ValueError("documentTemplate должен быть standard, article или gost")
 
 def remove_extension(file_name):
     return os.path.splitext(file_name)[0]
@@ -50,37 +131,59 @@ def get_preview_response(file_name: str):
 
 
 def get_download_response(file_name: str):
-    requiredFileExtension = get_extension(file_name)
-    file_name = remove_extension(file_name)
-    pdf_file_path_single = UPLOAD_DIR / file_name / f"{file_name}.pdf"
-    pdf_file_path_include = UPLOAD_DIR / file_name / "main.pdf"
-    tex_file_path = UPLOAD_DIR / file_name / f"{file_name}.zip"
+    required_file_extension = get_extension(file_name)
+    session_id = remove_extension(file_name)
+    session_dir = UPLOAD_DIR / session_id
+    pdf_file_path_single = session_dir / f"{session_id}.pdf"
+    pdf_file_path_include = session_dir / "main.pdf"
+    single_tex_file_path = session_dir / "tex" / f"{session_id}.tex"
+    zip_file_path = session_dir / f"{session_id}.zip"
 
-    if requiredFileExtension == "pdf":
-        if pdf_file_path_single.exists():
-            return FileResponse(
-                pdf_file_path_single,
-                media_type="application/pdf",
-                filename=f"{file_name}.pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename={file_name}.pdf"}
-            )
-        elif pdf_file_path_include.exists():
-            return FileResponse(
-                pdf_file_path_include,
-                media_type="application/pdf",
-                filename=f"{file_name}.pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename={file_name}.pdf"}
-            )
-    elif requiredFileExtension == "zip" and tex_file_path.exists():
+    if required_file_extension == "pdf" and pdf_file_path_single.exists():
         return FileResponse(
-            tex_file_path,
-            media_type="application/zip",
-            filename=f"{file_name}.zip",
-            headers={"Content-Disposition": f"attachment; filename={file_name}.zip"}
+            pdf_file_path_single,
+            media_type="application/pdf",
+            filename=f"{session_id}.pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{session_id}.pdf"'
+            },
         )
-    return JSONResponse(content={"error": f"File not found: {file_name}"}, status_code=404)
+
+    if required_file_extension == "pdf" and pdf_file_path_include.exists():
+        return FileResponse(
+            pdf_file_path_include,
+            media_type="application/pdf",
+            filename="main.pdf",
+            headers={
+                "Content-Disposition": 'attachment; filename="main.pdf"'
+            },
+        )
+
+    if required_file_extension == "tex" and single_tex_file_path.exists():
+        return FileResponse(
+            single_tex_file_path,
+            media_type="text/plain",
+            filename=f"{session_id}.tex",
+            headers={
+                "Content-Disposition": f'attachment; filename="{session_id}.tex"'
+            },
+        )
+
+    if required_file_extension == "zip" and zip_file_path.exists():
+        return FileResponse(
+            zip_file_path,
+            media_type="application/zip",
+            filename=f"{session_id}.zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{session_id}.zip"'
+            },
+        )
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": f"File not found: {file_name}"
+        },
+    )
 
 
 def clear_directory(directory_path: Path):

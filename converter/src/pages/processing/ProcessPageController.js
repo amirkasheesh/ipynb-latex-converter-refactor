@@ -1,7 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ProcessPage from "./ProcessPage";
 import { useToast } from "../../design_kit/notification/ToastContext";
 import { v4 as uuidv4 } from "uuid";
+
+const getSavedSetting = (key, defaultValue) => {
+    const savedValue = localStorage.getItem(key);
+    return savedValue === null ? defaultValue : savedValue;
+};
+
+const getSavedBooleanSetting = (key, defaultValue) => {
+    const savedValue = localStorage.getItem(key);
+
+    if (savedValue === null) {
+        return defaultValue;
+    }
+
+    return savedValue === "true";
+};
 
 const ProcessPageController = () => {
     // Отображение файлов
@@ -9,15 +24,53 @@ const ProcessPageController = () => {
     const [fileId, setFileId] = useState("");
     const [previewPdfUrl, setPreviewPdfUrl] = useState("");
     const [previewTexUrl, setPreviewTexUrl] = useState("");
+    const [latexText, setLatexText] = useState("");
+    const [latexErrorLog, setLatexErrorLog] = useState("");
 
     // Настройки конвертации
     const [selectedCells, setSelectedCells] = useState([]);
     const [selectionMode, setSelectionMode] = useState("all");
     const [outputSelectionMode, setOutputSelectionMode] = useState("all");
-    const [codeBg, setCodeBg] = useState("#f6f8fa");
-    const [includeCellNumbers, setIncludeCellNumbers] = useState("true");
-    const [indent, setIndent] = useState(0);
-    const [removeComments, setRemoveComments] = useState("false");
+
+    const [codeBg, setCodeBg] = useState(() =>
+    getSavedSetting("codeBg", "#f6f8fa")
+    );
+
+    const [includeCellNumbers, setIncludeCellNumbers] = useState(() =>
+        getSavedSetting("includeCellNumbers", "true")
+    );
+
+    const [indent, setIndent] = useState(() =>
+        Number(getSavedSetting("indent", 0))
+    );
+
+    const [removeComments, setRemoveComments] = useState(() =>
+        getSavedSetting("removeComments", "false")
+    );
+
+    const [documentTemplate, setDocumentTemplate] = useState(() =>
+        getSavedSetting("documentTemplate", "standard")
+    );
+
+    useEffect(() => {
+        localStorage.setItem("codeBg", codeBg);
+    }, [codeBg]);
+
+    useEffect(() => {
+        localStorage.setItem("includeCellNumbers", includeCellNumbers);
+    }, [includeCellNumbers]);
+
+    useEffect(() => {
+        localStorage.setItem("indent", String(indent));
+    }, [indent]);
+
+    useEffect(() => {
+        localStorage.setItem("removeComments", removeComments);
+    }, [removeComments]);
+
+    useEffect(() => {
+        localStorage.setItem("documentTemplate", documentTemplate);
+    }, [documentTemplate]);
 
     const { showToast } = useToast();
     const baseUrl = process.env.REACT_APP_API_URL
@@ -49,10 +102,22 @@ const ProcessPageController = () => {
             let totalIndex = 0;
 
             for (const file of files) {
-                const content = await file.text();
-                const notebook = JSON.parse(content);
+                let notebook;
 
-                const cells = notebook.cells || [];
+                try {
+                    const content = await file.text();
+                    notebook = JSON.parse(content);
+                } catch (error) {
+                    showToast(`Файл ${file.name} должен быть корректным JSON-документом Jupyter Notebook`);
+                    return;
+                }
+
+                if (!notebook || typeof notebook !== "object" || !Array.isArray(notebook.cells)) {
+                    showToast(`Файл ${file.name} должен содержать список ячеек cells`);
+                    return;
+                }
+
+                const cells = notebook.cells;
 
                 const fileCells = cells.map((cell, index) => {
                     selected.push({
@@ -121,6 +186,71 @@ const ProcessPageController = () => {
         setSelectionMode("custom");
     };
 
+    const getErrorData = async (response) => {
+        try {
+            const data = await response.json();
+
+            return {
+                message: data.error || "Ошибка конвертации файлов",
+                log: data.log || ""
+            };
+        } catch (error) {
+            return {
+                message: "Ошибка конвертации файлов",
+                log: ""
+            };
+        }
+    };
+
+    const handleCompileTex = async () => {
+        if (!fileId) {
+            showToast("Сначала необходимо сконвертировать файл");
+            return;
+        }
+
+        if (!latexText.trim()) {
+            showToast("LaTeX-код пустой");
+            return;
+        }
+
+        const prevPdfUrl = previewPdfUrl;
+        setPreviewPdfUrl("loading");
+
+        const formData = new FormData();
+        formData.append("texContent", latexText);
+
+        try {
+            const response = await fetch(`${baseUrl}compile-tex/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Session-ID": sessionId
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const cacheKey = Date.now();
+
+                setFileId(data.file_id);
+                setPreviewPdfUrl(`${baseUrl}preview/${data.file_id}.pdf?v=${cacheKey}`);
+                setPreviewTexUrl(`${baseUrl}preview/${data.file_id}.tex?v=${cacheKey}`);
+                setLatexErrorLog("");
+
+                showToast("PDF успешно обновлен из LaTeX-кода");
+            } else {
+                setPreviewPdfUrl(prevPdfUrl);
+
+                const errorData = await getErrorData(response);
+                setLatexErrorLog(errorData.log);
+                showToast(errorData.message);
+            }
+        } catch (error) {
+            setPreviewPdfUrl(prevPdfUrl);
+            showToast(`Ошибка: ${error}`);
+        }
+    };
+
     const handleConvert = async (files, mergeMode = "single") => {
         if (!files || files.length === 0) {
             showToast("Сначала необходимо выбрать файлы");
@@ -145,6 +275,7 @@ const ProcessPageController = () => {
         formData.append("indent", indent.toString());
         formData.append("removeComments", removeComments);
         formData.append("mergeMode", mergeMode);
+        formData.append("documentTemplate", documentTemplate);
 
         try {
             const response = await fetch(`${baseUrl}convert/`, {
@@ -160,35 +291,63 @@ const ProcessPageController = () => {
                 setFileId(data.file_id);
                 setPreviewPdfUrl(`${baseUrl}preview/${data.file_id}.pdf`);
                 setPreviewTexUrl(`${baseUrl}preview/${data.file_id}.tex`);
+                setLatexText("");
+                setLatexErrorLog("");
 
                 showToast("Файл успешно сконвертирован");
             } else {
                 setPreviewPdfUrl(prevPdfUrl);
                 setPreviewTexUrl(prevTexUrl);
 
-                showToast("Ошибка конвертации файлов");
+                const errorData = await getErrorData(response);
+                setLatexErrorLog(errorData.log);
+                showToast(errorData.message);
             }
         } catch (error) {
+            setPreviewPdfUrl(prevPdfUrl);
+            setPreviewTexUrl(prevTexUrl);
+
             showToast(`Ошибка: ${error}`);
         }
     };
 
-    const handleDownload = async (file, format) => {
+    const handleDownload = async (file, format, mergeMode = "single") => {
         if (!fileId) {
             showToast("Сначала необходимо сконвертировать файлы");
             return;
         }
 
-        const fileExtension = format === "pdf" ? ".pdf" : ".zip";
+        const fileExtension =
+            format === "pdf"
+                ? ".pdf"
+                : mergeMode === "include"
+                    ? ".zip"
+                    : ".tex";
 
         try {
-            const url = `${baseUrl}download/${fileId}${fileExtension}`
+            const url = `${baseUrl}download/${fileId}${fileExtension}`;
             const response = await fetch(url);
+
+            if (!response.ok) {
+                const errorData = await getErrorData(response);
+                showToast(errorData.message);
+                return;
+            }
+
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
+
             link.href = blobUrl;
-            link.download = file.name.replace(".ipynb", fileExtension);
+
+            if (format === "pdf") {
+                link.download = file.name.replace(".ipynb", ".pdf");
+            } else if (mergeMode === "include") {
+                link.download = "tex_files.zip";
+            } else {
+                link.download = file.name.replace(".ipynb", ".tex");
+            }
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -222,6 +381,13 @@ const ProcessPageController = () => {
             setIndent={setIndent}
             removeComments={removeComments}
             setRemoveComments={setRemoveComments}
+            documentTemplate={documentTemplate}
+            setDocumentTemplate={setDocumentTemplate}
+            latexText={latexText}
+            setLatexText={setLatexText}
+            onCompileTex={handleCompileTex}
+            latexErrorLog={latexErrorLog}
+            setLatexErrorLog={setLatexErrorLog}
         />
     );
 };
